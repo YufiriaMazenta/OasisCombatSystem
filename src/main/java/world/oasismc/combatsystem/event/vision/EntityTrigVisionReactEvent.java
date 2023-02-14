@@ -12,14 +12,12 @@ public class EntityTrigVisionReactEvent extends BaseCustomEvent {
     private static final HandlerList handlerList = new HandlerList();
     private final Entity damager;
     private final Entity entity;
-    private double damage;
     private final VisionAttack visionAttack;
 
-    public EntityTrigVisionReactEvent(@NotNull Entity entity, EntityDamageByEntityEvent event, VisionAttack visionAttack) {
+    protected EntityTrigVisionReactEvent(@NotNull Entity entity, EntityDamageByEntityEvent event, VisionAttack visionAttack) {
         this.entity = entity;
         this.damager = event.getDamager();
         this.visionAttack = visionAttack;
-        this.damage = event.getDamage();
     }
 
     @Override
@@ -36,11 +34,11 @@ public class EntityTrigVisionReactEvent extends BaseCustomEvent {
     }
 
     public double getDamage() {
-        return damage;
+        return visionAttack.getDamage();
     }
 
     public void setDamage(double damage) {
-        this.damage = damage;
+        visionAttack.setDamage(damage);
     }
 
     public VisionAttack getVisionAttack() {

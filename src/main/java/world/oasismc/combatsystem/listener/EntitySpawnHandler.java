@@ -14,13 +14,13 @@ import world.oasismc.combatsystem.vision.VisionType;
 import java.util.*;
 import java.util.function.Supplier;
 
-public enum EntitySpawnListener implements Listener {
+public enum EntitySpawnHandler implements Listener {
 
     INSTANCE;
 
     private Map<EntityType, Supplier<VisionType>> defEntityVisionTypeMap;
 
-    EntitySpawnListener() {
+    EntitySpawnHandler() {
         defEntityVisionTypeMap = new HashMap<>();
         defEntityVisionTypeMap.put(EntityType.FALLING_BLOCK, () -> VisionType.GEO);
         defEntityVisionTypeMap.put(EntityType.LIGHTNING, () -> VisionType.ELECTRO);

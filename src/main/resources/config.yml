@@ -77,4 +77,11 @@ evaporation_damage_scale:
 melt_damage_scale:
   pyro_trigger: 2.0
   cryo_trigger: 1.5
-overload_explosion_power_scale: 2.0
+#超载反应爆炸威力比例
+overload_explosion_power_scale: 0.5
+#燃烧反应火焰持续时间(tick)比例
+fire_tick_scale: 100
+#扩散反应半径比例
+diffusion_radius_scale: 1.5
+#扩散反应伤害比例
+diffusion_damage_scale: 2.0

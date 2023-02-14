@@ -4,8 +4,8 @@ import org.bukkit.NamespacedKey;
 import world.oasismc.combatsystem.OasisCombatSystem;
 import world.oasismc.combatsystem.vision.VisionType;
 
-import java.util.ArrayList;
-import java.util.List;
+import java.util.HashMap;
+import java.util.Map;
 
 public class NamespacedKeyUtil {
 
@@ -26,24 +26,28 @@ public class NamespacedKeyUtil {
     public static final NamespacedKey FIRE_KEY = newKey(VisionType.FIRE.name());
     public static final NamespacedKey ICE_KEY = newKey(VisionType.ICE.name());
     public static final NamespacedKey SURGE_KEY = newKey(VisionType.SURGE.name());
-    public static final List<NamespacedKey> VISION_KEY_LIST;
+    public static final Map<VisionType, NamespacedKey> VISION_KEY_MAP;
 
     static {
-        VISION_KEY_LIST = new ArrayList<>();
-        VISION_KEY_LIST.add(FIRE_KEY);
-        VISION_KEY_LIST.add(PYRO_KEY);
-        VISION_KEY_LIST.add(HYDRO_KEY);
-        VISION_KEY_LIST.add(ICE_KEY);
-        VISION_KEY_LIST.add(CRYO_KEY);
-        VISION_KEY_LIST.add(SURGE_KEY);
-        VISION_KEY_LIST.add(ELECTRO_KEY);
-        VISION_KEY_LIST.add(DENDRO_KEY);
-        VISION_KEY_LIST.add(ANEMO_KEY);
-        VISION_KEY_LIST.add(GEO_KEY);
+        VISION_KEY_MAP = new HashMap<>();
+        VISION_KEY_MAP.put(VisionType.FIRE, FIRE_KEY);
+        VISION_KEY_MAP.put(VisionType.PYRO, PYRO_KEY);
+        VISION_KEY_MAP.put(VisionType.HYDRO, HYDRO_KEY);
+        VISION_KEY_MAP.put(VisionType.ICE, ICE_KEY);
+        VISION_KEY_MAP.put(VisionType.CRYO, CRYO_KEY);
+        VISION_KEY_MAP.put(VisionType.SURGE, SURGE_KEY);
+        VISION_KEY_MAP.put(VisionType.ELECTRO, ELECTRO_KEY);
+        VISION_KEY_MAP.put(VisionType.DENDRO, DENDRO_KEY);
+        VISION_KEY_MAP.put(VisionType.ANEMO, ANEMO_KEY);
+        VISION_KEY_MAP.put(VisionType.GEO, GEO_KEY);
     }
 
     public static NamespacedKey newKey(String keyStr) {
         return new NamespacedKey(OasisCombatSystem.getInstance(), keyStr);
+    }
+
+    public static NamespacedKey getVisionKey(VisionType visionType) {
+        return VISION_KEY_MAP.get(visionType);
     }
 
 }

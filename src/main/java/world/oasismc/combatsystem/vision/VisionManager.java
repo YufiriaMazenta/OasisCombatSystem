@@ -8,12 +8,12 @@ import org.bukkit.entity.Entity;
 import org.bukkit.persistence.PersistentDataContainer;
 import org.bukkit.persistence.PersistentDataType;
 import world.oasismc.combatsystem.OasisCombatSystem;
-import world.oasismc.combatsystem.event.vision.EntityTrigVisionReactEvent;
-import world.oasismc.combatsystem.event.vision.OverloadEvent;
+import world.oasismc.combatsystem.event.vision.*;
+import world.oasismc.combatsystem.function.Function4;
 import world.oasismc.combatsystem.function.vision.VisionReactFunction;
+import world.oasismc.combatsystem.listener.VisionEventHandler;
 import world.oasismc.combatsystem.util.LangUtil;
 import world.oasismc.combatsystem.util.NamespacedKeyUtil;
-import world.oasismc.combatsystem.vision.function.*;
 
 import java.util.HashMap;
 import java.util.Locale;
@@ -98,7 +98,7 @@ public class VisionManager {
         dataContainer.set(NamespacedKeyUtil.ATTACK_VISION_KEY, PersistentDataType.TAG_CONTAINER, visionContainer);
     }
 
-    public static VisionAttack getEntityVisionAttack(Entity entity) {
+    public static VisionAttack getEntityVisionAttack(Entity entity, double damage) {
         PersistentDataContainer dataContainer = entity.getPersistentDataContainer();
         NamespacedKey attackVisionKey = NamespacedKeyUtil.ATTACK_VISION_KEY;
         PersistentDataContainer attackVisionContainer = dataContainer.get(attackVisionKey, PersistentDataType.TAG_CONTAINER);
@@ -107,7 +107,7 @@ public class VisionManager {
         String typeStr = attackVisionContainer.get(NamespacedKeyUtil.ATTACK_VISION_TYPE_KEY, PersistentDataType.STRING);
         VisionType type = VisionType.valueOf(typeStr);
         Double visionNum = attackVisionContainer.get(NamespacedKeyUtil.ATTACK_VISION_NUM_KEY, PersistentDataType.DOUBLE);
-        return new VisionAttack(type, visionNum);
+        return new VisionAttack(type, visionNum, damage);
     }
 
     /**
@@ -123,7 +123,8 @@ public class VisionManager {
             return;
         long updateTime = System.currentTimeMillis();
         for (NamespacedKey key : visionContainer.getKeys()) {
-            if (!NamespacedKeyUtil.VISION_KEY_LIST.contains(key))
+            VisionType visionType = VisionType.valueOf(key.getKey().toUpperCase(Locale.ROOT));
+            if (!NamespacedKeyUtil.VISION_KEY_MAP.containsKey(visionType))
                 continue;
             PersistentDataContainer vision = visionContainer.get(key, PersistentDataType.TAG_CONTAINER);
             if (vision == null)
@@ -150,30 +151,34 @@ public class VisionManager {
 
     /**
      *
-     * @param entity 反应实体
-     * @param attack 元素攻击对象
+     * @param event 触发反应的事件
      * @return 返回反应后的伤害数字
      */
     public static double visionReaction(EntityTrigVisionReactEvent event) {
+        Entity entity = event.getEntity();
+        Double damage = event.getDamage();
+        VisionAttack attack = event.getVisionAttack();
         PersistentDataContainer dataContainer = entity.getPersistentDataContainer();
         PersistentDataContainer visionContainer = dataContainer.get(NamespacedKeyUtil.VISION_KEY, PersistentDataType.TAG_CONTAINER);
-        if (visionContainer == null)
+        if (visionContainer == null) {
+            VisionAttachmentEvent.buildEvent(attack, entity, VisionAttachmentEvent.AttachCause.ENTITY_ATTACK).call();
             return damage;
-        for (NamespacedKey key : NamespacedKeyUtil.VISION_KEY_LIST) {
+        }
+
+        for (VisionType type : NamespacedKeyUtil.VISION_KEY_MAP.keySet()) {
+            NamespacedKey key = NamespacedKeyUtil.getVisionKey(type);
             PersistentDataContainer vision = visionContainer.get(key, PersistentDataType.TAG_CONTAINER);
             if (vision == null)
                 continue;
             VisionType reactedVision = VisionType.valueOf(key.getKey().toUpperCase(Locale.ROOT));
             if (reactedVision.equals(attack.getType())) {
-                addVision(entity, attack.getType(), attack.getVisionNum());
+                VisionAttachmentEvent.buildEvent(attack, entity, VisionAttachmentEvent.AttachCause.ENTITY_ATTACK).call();
             } else {
-                double reactVisionNum = visionReactNumMap.get(attack.getType()).getOrDefault(reactedVision, 0.0);
-                if (reactVisionNum == 0.0) {
-                    addVision(entity, attack.getType(), attack.getVisionNum());
+                VisionReactFunction function = visionReactFuncMap.get(attack.getType()).get(reactedVision);
+                if (function == null) {
+                    VisionAttachmentEvent.buildEvent(attack, entity, VisionAttachmentEvent.AttachCause.VISION_REACT).call();
                 } else {
-                    double actualVisionNum = attack.getVisionNum() * reactVisionNum;
-                    damage = visionReactFuncMap.get(attack.getType()).get(reactedVision).execute(entity, null, attack, damage);
-                    addVision(entity, reactedVision, - actualVisionNum);
+                    damage = function.execute(entity, event.getDamager(), reactedVision, attack);
                 }
             }
         }
@@ -197,27 +202,60 @@ public class VisionManager {
 
     public static void loadVisionReactFuncMap() {
         Map<VisionType, VisionReactFunction> pyroMap = new HashMap<>();
-        pyroMap.put(VisionType.DENDRO, (entity, trigger, visionType, visionAttack) -> {return d});
-        pyroMap.put(VisionType.SURGE, FireFunction.INSTANCE);
-        pyroMap.put(VisionType.ELECTRO, OverloadEvent.buildEvent());
-        pyroMap.put(VisionType.HYDRO, EvaporationFunc.INSTANCE);
-        pyroMap.put(VisionType.CRYO, MeltFunc.INSTANCE);
-        pyroMap.put(VisionType.ICE, MeltFunc.INSTANCE);
-        pyroMap.put(VisionType.ANEMO, CrystallizedFunc.INSTANCE);
-        pyroMap.put(VisionType.GEO, DiffusionFunc.INSTANCE);
+        VisionReactFunction fireReactFunc = (entity, trigger, visionType, visionAttack) -> {
+            FireReactEvent.buildEvent(entity, trigger, visionType, visionAttack).call();
+            return visionAttack.getDamage();
+        };
+        pyroMap.put(VisionType.DENDRO, fireReactFunc);
+        pyroMap.put(VisionType.SURGE, fireReactFunc);
+        VisionReactFunction overloadFunc = (entity, trigger, visionType, visionAttack) -> {
+            OverloadEvent.buildEvent(entity, trigger, visionType, visionAttack).call();
+            return visionAttack.getDamage();
+        };
+        pyroMap.put(VisionType.ELECTRO, overloadFunc);
+        VisionReactFunction evaporationFunc = (entity, trigger, visionType, visionAttack) -> {
+            EvaporationEvent event = EvaporationEvent.buildEvent(entity, trigger, visionType, visionAttack).call();
+            return event.getDamage();
+        };
+        pyroMap.put(VisionType.HYDRO, evaporationFunc);
+        VisionReactFunction meltReactFunc = (entity, trigger, visionType, visionAttack) -> {
+            MeltReactEvent event = MeltReactEvent.buildEvent(entity, trigger, visionType, visionAttack).call();
+            return event.getDamage();
+        };
+        pyroMap.put(VisionType.CRYO, meltReactFunc);
+        pyroMap.put(VisionType.ICE, meltReactFunc);
+        VisionReactFunction diffusionFunc = (entity, trigger, visionType, visionAttack) -> {
+            DiffusionEvent.buildEvent(entity, trigger, visionType, visionAttack).call();
+            return visionAttack.getDamage();
+        };
+        pyroMap.put(VisionType.ANEMO, diffusionFunc);
+        VisionReactFunction crystallizedFunc = (entity, trigger, visionType, visionAttack) -> {
+            CrystallizedEvent.buildEvent(entity, trigger, visionType, visionAttack).call();
+            return visionAttack.getDamage();
+        };
+        pyroMap.put(VisionType.GEO, crystallizedFunc);
         visionReactFuncMap.put(VisionType.PYRO, pyroMap);
 
-        Map<VisionType, VisionReactFunc> hydroMap = new HashMap<>();
-        hydroMap.put(VisionType.PYRO, EvaporationFunc.INSTANCE);
+        Map<VisionType, VisionReactFunction> hydroMap = new HashMap<>();
+        hydroMap.put(VisionType.PYRO, evaporationFunc);
+        VisionReactFunction bloomFunc = (entity, trigger, visionType, visionAttack) -> {
+            BloomReactEvent.buildEvent(entity, trigger, visionType, visionAttack).call();
+            return visionAttack.getDamage();
+        };
+        hydroMap.put(VisionType.DENDRO, bloomFunc);
         visionReactFuncMap.put(VisionType.HYDRO, hydroMap);
 
-        Map<VisionType, VisionReactFunc> electroMap = new HashMap<>();
-        electroMap.put(VisionType.PYRO, OverloadFunc.INSTANCE);
+        Map<VisionType, VisionReactFunction> electroMap = new HashMap<>();
+        electroMap.put(VisionType.PYRO, overloadFunc);
         visionReactFuncMap.put(VisionType.ELECTRO, electroMap);
 
-        Map<VisionType, VisionReactFunc> cryoMap = new HashMap<>();
-        cryoMap.put(VisionType.PYRO, MeltFunc.INSTANCE);
+        Map<VisionType, VisionReactFunction> cryoMap = new HashMap<>();
+        cryoMap.put(VisionType.PYRO, meltReactFunc);
         visionReactFuncMap.put(VisionType.CRYO, cryoMap);
+
+        Map<VisionType, VisionReactFunction> dendroMap = new HashMap<>();
+        dendroMap.put(VisionType.HYDRO, bloomFunc);
+        visionReactFuncMap.put(VisionType.DENDRO, dendroMap);
     }
 
     public static void setEntityName(Entity entity) {

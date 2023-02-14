@@ -5,7 +5,7 @@ import org.bukkit.event.Listener;
 import org.bukkit.event.entity.PlayerDeathEvent;
 import world.oasismc.combatsystem.vision.VisionManager;
 
-public enum PlayerDeathListener implements Listener {
+public enum PlayerEventHandler implements Listener {
 
     INSTANCE;
 
