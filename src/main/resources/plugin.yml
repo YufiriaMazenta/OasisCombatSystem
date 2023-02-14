@@ -1,0 +1,14 @@
+name: OasisCombatSystem
+version: ${version}
+main: world.oasismc.combatsystem.OasisCombatSystem
+api-version: 1.19
+load: STARTUP
+authors: [ Oasis ]
+description: Combat system plugin
+softdepend:
+  - MythicMobs
+commands:
+  combat-system:
+    permission: oasis.combat.admin
+    aliases:
+      - ocs

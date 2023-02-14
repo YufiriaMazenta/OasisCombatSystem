@@ -1,0 +1,80 @@
+vision_react_num:
+  PYRO:
+    DENDRO: 1.6
+    HYDRO: 0.5
+    CRYO: 2.0
+    ELECTRO: 1.0
+    ANEMO: 1.0
+    GEO: 1.0
+    FIRE: 0
+    ICE: 2.0
+    SURGE: 1.6
+  HYDRO:
+    DENDRO: 0.5
+    ELECTRO: 1.0
+    CRYO: 1.0
+    PYRO: 2.0
+    ANEMO: 1.0
+    GEO: 1.0
+    FIRE: 2.0
+    ICE: 1.0
+    SURGE: 0.5
+  CRYO:
+    DENDRO: 0
+    ELECTRO: 1.0
+    HYDRO: 1.0
+    PYRO: 0.5
+    ANEMO: 0
+    GEO: 0
+    FIRE: 0.5
+    ICE: 0
+    SURGE: 0
+  ELECTRO:
+    DENDRO: 1.0
+    HYDRO: 1.0
+    CRYO: 1.0
+    PYRO: 1.0
+    ANEMO: 0
+    GEO: 0
+    FIRE: 1.0
+    ICE: 1.0
+    SURGE: 0
+  DENDRO:
+    ELECTRO: 1.0
+    HYDRO: 2.0
+    CRYO: 0
+    PYRO: 0.625
+    ANEMO: 0
+    GEO: 0
+    FIRE: 0.625
+    ICE: 0
+    SURGE: 0
+  ANEMO:
+    PYRO: 1.0
+    HYDRO: 1.0
+    CRYO: 1.0
+    ELECTRO: 1.0
+    DENDRO: 0
+    GEO: 0
+    FIRE: 1.0
+    ICE: 1.0
+    SURGE: 0
+  GEO:
+    PYRO: 1.0
+    HYDRO: 1.0
+    CRYO: 1.0
+    ELECTRO: 1.0
+    DENDRO: 0
+    ANEMO: 0
+    FIRE: 1.0
+    ICE: 1.0
+    SURGE: 0
+#蒸发反应伤害倍率
+evaporation_damage_scale:
+  pyro_trigger: 1.5
+  hydro_trigger: 2.0
+#融化反应伤害倍率
+melt_damage_scale:
+  pyro_trigger: 2.0
+  cryo_trigger: 1.5
+overload_explosion_power_scale: 2.0
